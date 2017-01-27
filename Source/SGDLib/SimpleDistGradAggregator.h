@@ -179,7 +179,8 @@ private:
                     else
                     {
                         m_gpuDataTransferer = std::make_unique<GPUDataTransferer>(deviceId, m_useAsyncAggregation);
-                        m_intermediateCPUBuffer = AllocateIntermediateBuffer(deviceId, totalGradientsSizeInElements);
+                        m_intermediateCPUBuffer = std::shared_ptr<ElemType>(new ElemType[totalGradientsSizeInElements], [](ElemType* p) { delete[] p; });
+                        // AllocateIntermediateBuffer(deviceId, totalGradientsSizeInElements);
                     }
                 }
             }
@@ -253,6 +254,7 @@ private:
                 for (size_t i = 0; i < numGradMatrices; ++i)
                 {
                     m_AggregationBuffer->ColumnSlice(offset, gradients[i]->GetNumElements()).AssignValuesOf(gradients[i]->Reshaped(1, gradients[i]->GetNumElements()));
+                    // m_AggregationBuffer->ColumnSlice(offset, gradients[i]->GetNumElements()).Reshaped(gradients[i]->GetNumRows(), gradients[i]->GetNumCols()).Print("Before ");
                     offset += gradients[i]->GetNumElements();
                 }
 
@@ -381,6 +383,7 @@ private:
                 for (size_t i = 0; i < numGradMatrices; ++i)
                 {
                     gradients[i]->AssignValuesOf(m_AggregationBuffer->ColumnSlice(offset, gradients[i]->GetNumElements()).Reshaped(gradients[i]->GetNumRows(), gradients[i]->GetNumCols()));
+                    m_AggregationBuffer->ColumnSlice(offset, gradients[i]->GetNumElements()).Reshaped(gradients[i]->GetNumRows(), gradients[i]->GetNumCols()).Print("After ");
                     offset += gradients[i]->GetNumElements();
                 }
             }
